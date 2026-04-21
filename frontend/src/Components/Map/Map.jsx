@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import stateCulturalData from '../../assets/Culturalinfo';
+import i18n from '../../i18n';
+import { translateText } from '../TranslatedText';
 import './Map.css'; 
 
 const IndiaMap = () => {
+  const navigate = useNavigate();
   const [indiaGeoJSON, setIndiaGeoJSON] = useState(null);
   const mapRef = useRef(null);
   const popupRefs = useRef({});
@@ -62,7 +66,7 @@ const IndiaMap = () => {
         layer.setStyle(geoJsonStyle(feature));
       });
 
-      layer.on("click", () => {
+      layer.on("click", async () => {
         if (popupRefs.current[stateName]) {
           clearInterval(popupRefs.current[stateName]);
           delete popupRefs.current[stateName];
@@ -77,21 +81,36 @@ const IndiaMap = () => {
 
         const culturalInfo = stateCulturalData[stateName] || stateCulturalData["default"];
         
+        let translatedName = stateName;
+        let translatedDesc = culturalInfo.description;
+        let learnBtnLabel = "Learn More →";
+
+        if (i18n.language !== 'en') {
+          [translatedName, translatedDesc, learnBtnLabel] = await Promise.all([
+             translateText(stateName, i18n.language),
+             translateText(culturalInfo.description, i18n.language),
+             translateText("Learn More →", i18n.language)
+          ]);
+        }
+        
         const popupContent = `
           <div class="cultural-popup">
-            <h3>${stateName}</h3>
+            <h3>${translatedName}</h3>
             <div class="popup-scroll">
-              <p>${culturalInfo.description}</p>
+              <p class="description-link" style="cursor: pointer; color: #0288d1; text-decoration: underline;" data-state="${stateName}" title="Click to view and add cultural details">
+                ${translatedDesc}
+              </p>
             </div>
             <div id="slideshow-${stateName.replace(/\s+/g, '-')}" class="slideshow-container">
               ${culturalInfo.images.map((img, index) => `
                 <img 
                   src="${img}" 
-                  alt="${stateName} culture ${index + 1}" 
+                  alt="${translatedName} culture ${index + 1}" 
                   class="slide-image ${index === 0 ? 'active' : ''}"
                 />
               `).join('')}
             </div>
+            <button class="learn-more-btn" data-state="${stateName}">${learnBtnLabel}</button>
           </div>
         `;
         
@@ -115,6 +134,14 @@ const IndiaMap = () => {
 
             popupRefs.current[stateName] = intervalId;
           }
+
+          // Add click handlers for Learn More button and description link
+          const stateLinks = document.querySelectorAll(`[data-state="${stateName}"]`);
+          stateLinks.forEach(link => {
+            link.addEventListener('click', () => {
+              navigate(`/state/${encodeURIComponent(stateName)}`);
+            });
+          });
         }, 50);
       });
     }

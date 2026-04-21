@@ -3,6 +3,7 @@ import "./Cart.css";
 import { useCart } from "./CartContext";
 import { initiateRazorpayPayment } from "./PaymentService";
 import axios from "axios";
+import TranslatedText from "../TranslatedText";
 
 const Cart = () => {
   const { cart, removeFromCart, clearCart } = useCart();
@@ -60,7 +61,7 @@ const Cart = () => {
           <div key={item.productId} className="cart-item">
             <img src={item.image} alt={item.title} className="cart-item-img" />
             <div className="cart-item-info">
-              <h3>{item.title}</h3>
+              <h3><TranslatedText text={item.title} /></h3>
               <div className="price-qty-row">
                 <span className="item-price">₹{item.price}</span>
                 <span className="item-qty">x {item.quantity}</span>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import './Slides.css';
 import images from '../../../assets/slide_images';
+import { useTranslation } from 'react-i18next';
 
 function Slides() {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -18,7 +20,7 @@ function Slides() {
 
   return (
     <div className='slide-container'>
-      <h1 className='slide-header'>India's Heartbeat, Through Every Frame</h1>
+      <h1 className='slide-header'>{t("India's Heartbeat, Through Every Frame")}</h1>
       <div className="slider-wrapper">
         <div className="image-slider" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
           {images.map((image, idx) => (

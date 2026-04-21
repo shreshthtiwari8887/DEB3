@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./CourseDetails.css";
+import TranslatedText from "../TranslatedText";
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -17,7 +18,7 @@ const [comment, setComment] = useState("");
   const getImageUrl = (thumbnail) => {
     if (!thumbnail) return "/default-image.jpg";
     if (thumbnail.startsWith("http")) return thumbnail;
-    return `http://localhost:8080/${thumbnail}`;
+    return `http://localhost:8080/${thumbnail.replace(/\\/g, "/")}`;
   };
 
   useEffect(() => {
@@ -102,7 +103,7 @@ const [comment, setComment] = useState("");
 
       {/* HEADER */}
       <div className="cd2-header">
-        <h1>{course.courseName}</h1>
+        <h1><TranslatedText text={course.courseName} /></h1>
         <p className="cd2-instructor">
           👨‍🏫 {course.teacher?.firstName} {course.teacher?.lastName}
         </p>
@@ -158,11 +159,12 @@ const [comment, setComment] = useState("");
                   src={getImageUrl(course.thumbnail)}
                   alt="thumbnail"
                   className="cd2-thumbnail"
+                  onError={(e) => { e.target.src = "/default-image.jpg"; }}
                 />
 
                 <div className="cd2-overview-text">
                   <h2>About This Course</h2>
-                  <p>{course.description}</p>
+                  <p><TranslatedText text={course.description} /></p>
 
                   {!isEnrolled && (
                     <button
@@ -279,7 +281,7 @@ const [comment, setComment] = useState("");
           </p>
 
           <p className="review-comment">
-            {review.comment}
+            <TranslatedText text={review.comment} />
           </p>
 
         </div>

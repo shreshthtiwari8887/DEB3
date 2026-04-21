@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { animateScroll as scroll } from "react-scroll";
+import { useTranslation } from 'react-i18next';
 import './Navbar.css';
 import { useSnackbar } from 'notistack';
-import { useCart } from '../Cart/CartContext'; 
+import { useCart } from '../Cart/CartContext';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
 
@@ -75,38 +78,40 @@ const Navbar = () => {
         </Link>
 
         <ul className={`nav-links ${isMobile ? 'mobile' : ''}`}>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/about">About</Link></li>
+          <li><Link to="/">{t('Home')}</Link></li>
+          <li><Link to="/about">{t('About')}</Link></li>
 
           <li>
             <button id="features-button" className="quiz" onClick={handleNavigation}>
-              Quiz
+              {t('Quiz')}
             </button>
           </li>
 
           <li>
             <button id="features-button" className="cource" onClick={handleNavigation}>
-              Courses
+              {t('Courses')}
             </button>
           </li>
 
           <li>
             <button id="features-button" className="marketplace" onClick={handleNavigation}>
-              Marketplace
+              {t('Marketplace')}
             </button>
           </li>
 
-          <li><Link to="/contact">Contact</Link></li>
+          <li><Link to="/contact">{t('Contact')}</Link></li>
         </ul>
+
+        <LanguageSwitcher />
 
         <div className="auth-buttons">
           {!token ? (
             <>
               <Link to="/signup">
-                <button className="btn signup-btn">Sign Up</button>
+                <button className="btn signup-btn">{t('Signup')}</button>
               </Link>
               <Link to="/login">
-                <button className="btn login-btn">Login</button>
+                <button className="btn login-btn">{t('Login')}</button>
               </Link>
             </>
           ) : (
@@ -149,16 +154,16 @@ const Navbar = () => {
               {/* ⭐ ADMIN DASHBOARD LINK (Only for Admin role) */}
               {role === "admin" && (
                 <Link to="/admin-dashboard" className="panel-link admin-btn-link" onClick={toggleSlidingPanel}>
-                  <i className="fas fa-user-shield"></i> Admin Dashboard
+                  <i className="fas fa-user-shield"></i> {t('Admin Dashboard')}
                 </Link>
               )}
 
               <Link to={profilePath} className="panel-link" onClick={toggleSlidingPanel}>
-                <i className="fas fa-user-circle"></i> My Profile
+                <i className="fas fa-user-circle"></i> {t('My Profile')}
               </Link>
 
               <button onClick={handleLogout} className="panel-link logout-link">
-                <i className="fas fa-sign-out-alt"></i> Logout
+                <i className="fas fa-sign-out-alt"></i> {t('Logout')}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../Cart/CartContext";
 import { initiateRazorpayPayment } from "../Cart/PaymentService";
 import axios from "axios";
+import TranslatedText from "../TranslatedText";
 import "./Marketplace.css";
 
 const Marketplace = () => {
@@ -115,8 +116,8 @@ const Marketplace = () => {
             <div key={item.id} className="item-card">
               <img src={item.image} alt={item.name} className="item-image" />
               <div className="item-info">
-                <h3 className="item-name">{item.name}</h3>
-                <p className="item-description">{item.description}</p>
+                <h3 className="item-name"><TranslatedText text={item.name} /></h3>
+                <p className="item-description"><TranslatedText text={item.description} /></p>
                 <p className="item-price">₹{item.price}</p>
 
                 <div className="stock-badge">

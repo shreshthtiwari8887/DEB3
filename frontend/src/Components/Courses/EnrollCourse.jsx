@@ -16,7 +16,7 @@ const EnrollCourse = () => {
   const getImageUrl = (thumbnail) => {
     if (!thumbnail) return "/default-image.jpg";
     if (thumbnail.startsWith("http")) return thumbnail;
-    return `http://localhost:8080/${thumbnail}`;
+    return `http://localhost:8080/${thumbnail.replace(/\\/g, "/")}`;
   };
 
   useEffect(() => {
@@ -132,6 +132,7 @@ const EnrollCourse = () => {
           <img
             src={getImageUrl(course.thumbnail)}
             alt="thumbnail"
+            onError={(e) => { e.target.src = "/default-image.jpg"; }}
           />
         </div>
 

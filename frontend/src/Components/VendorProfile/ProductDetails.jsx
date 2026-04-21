@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSnackbar } from "notistack";
+import TranslatedText from "../TranslatedText";
 import "./ProductDetails.css";
 
 const ProductDetails = () => {
@@ -171,12 +172,12 @@ const ProductDetails = () => {
           {!isEditing ? (
             <>
               <div className="pd-header">
-                <h1>{product.title}</h1>
+                <h1><TranslatedText text={product.title} /></h1>
                 <button className="pd-edit-btn" onClick={() => setIsEditing(true)}>
                   Edit Details
                 </button>
               </div>
-              <p className="pd-desc">{product.description}</p>
+              <p className="pd-desc"><TranslatedText text={product.description} /></p>
               <h2 className="pd-price">₹{product.price}</h2>
               <p className="pd-stock">Stock: {product.stock}</p>
 

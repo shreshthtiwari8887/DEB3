@@ -14,6 +14,8 @@ const marketplaceRoutes = require("./routes/marketplace");
 const productRoutes = require("./routes/product");
 const cartRoutes = require("./routes/cart");
 const paymentRoutes = require("./routes/payment");
+const stateContentRoutes = require("./routes/stateContent");
+const translateRoutes = require("./routes/translate");
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/states", stateContentRoutes);
+app.use("/api/translate", translateRoutes);
 
 // 🔹 Default route (optional but useful for testing)
 app.get("/", (req, res) => {
@@ -45,3 +49,5 @@ const port = process.env.PORT || 8080;
 app.listen(port, () =>
   console.log(`Listening on port ${port}...`)
 );
+
+// Triggering restart for Razorpay keys!

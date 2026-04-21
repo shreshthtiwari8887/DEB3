@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import TranslatedText from "../TranslatedText";
 import "./Courses.css";
 
 const CourseCard = ({ course, isEnrolled }) => {
@@ -10,7 +11,7 @@ const CourseCard = ({ course, isEnrolled }) => {
   const getImageUrl = (thumbnail) => {
     if (!thumbnail) return "/default-image.jpg";
     if (thumbnail.startsWith("http")) return thumbnail;
-    return `http://localhost:8080/${thumbnail}`;
+    return `http://localhost:8080/${thumbnail.replace(/\\/g, "/")}`;
   };
 
   /* ⭐ RENDER STARS */
@@ -43,6 +44,7 @@ const CourseCard = ({ course, isEnrolled }) => {
         <img
           src={getImageUrl(course.thumbnail)}
           alt={course.courseName}
+          onError={(e) => { e.target.src = "/default-image.jpg"; }}
         />
 
         {isEnrolled && (
@@ -57,7 +59,7 @@ const CourseCard = ({ course, isEnrolled }) => {
 
         {/* Title */}
         <h3 className="course-title">
-          {course.courseName}
+          <TranslatedText text={course.courseName} />
         </h3>
 
         {/* Instructor */}
@@ -83,7 +85,7 @@ const CourseCard = ({ course, isEnrolled }) => {
 
         {/* Description */}
         <p className="student-course-description">
-          {course.description}
+          <TranslatedText text={course.description} />
         </p>
 
         {/* Meta Info */}
