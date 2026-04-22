@@ -11,19 +11,8 @@
 
   </head>
   <body>
-    <script>
-     window.watsonAssistantChatOptions = {
-       integrationID: "9f35437a-722e-4085-bb3f-f8ba5b3bfa69", // The ID of this integration.
-       region: "au-syd", // The region your integration is hosted in.
-       serviceInstanceID: "f96cc5f5-13b0-4a02-8b8f-ce1ce99c52de", // The ID of your service instance.
-       onLoad: async (instance) => { await instance.render(); }
-     };
-     setTimeout(function(){
-       const t=document.createElement('script');
-       t.src="https://web-chat.global.assistant.watson.appdomain.cloud/versions/" + (window.watsonAssistantChatOptions.clientVersion || 'latest') + "/WatsonAssistantChatEntry.js";
-       document.head.appendChild(t);
-     });
-  </script>
+    <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
+    <script src="https://files.bpcontent.cloud/2026/04/16/12/20260416123718-7K1K11WU.js" defer></script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
