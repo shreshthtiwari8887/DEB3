@@ -3,7 +3,6 @@ const { User, validate } = require("../models/user");
 const bcrypt = require("bcrypt");
 const auth = require("../middleware/auth");
 const Product = require("../models/product");
-const emailValidator = require("deep-email-validator");
 
 /* ===========================
    REGISTER USER
@@ -13,14 +12,6 @@ router.post("/", async (req, res) => {
     const { error } = validate(req.body);
     if (error)
       return res.status(400).send({ message: error.details[0].message });
-
-    // Validate email deeply (MX records, typos, disposable domains)
-    const emailValidationResult = await emailValidator.validate(req.body.email);
-    if (!emailValidationResult.valid) {
-      return res.status(400).send({
-        message: "Please provide a valid and active email address."
-      });
-    }
 
     const user = await User.findOne({ email: req.body.email });
     if (user) {

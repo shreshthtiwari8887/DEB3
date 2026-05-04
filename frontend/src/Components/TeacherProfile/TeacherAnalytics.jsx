@@ -8,6 +8,8 @@ import "./TeacherProfile.css";
 const TeacherAnalytics = ({ token }) => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [insight, setInsight] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -25,6 +27,29 @@ const TeacherAnalytics = ({ token }) => {
     };
     fetchAnalytics();
   }, [token]);
+
+  const generateDeepInsight = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch("http://localhost:8080/api/ai/teacher-deep-insight", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-auth-token": token 
+        },
+        body: JSON.stringify({
+          courses: analytics.courseEnrollments,
+          retentionRate: "72%" // Simulated
+        })
+      });
+      const data = await res.json();
+      setInsight(data);
+    } catch (error) {
+      console.error("Insight Error:", error);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (loading) return <p>Loading Analytics...</p>;
   if (!analytics) return <p>Failed to load analytics.</p>;
@@ -52,6 +77,46 @@ const TeacherAnalytics = ({ token }) => {
           <h3>Average Rating</h3>
           <p className="stat-value">⭐ {analytics.averageRating}</p>
         </div>
+        <div className="stat-card retention-card">
+          <h3>Avg Watch Time</h3>
+          <p className="stat-value">72%</p>
+        </div>
+      </div>
+
+      <div className="ai-insight-section">
+        <div className="ai-insight-header">
+          <h3>🧠 Deep AI Pedagogical Insight</h3>
+          <button 
+            className={`generate-insight-btn ${generating ? 'loading' : ''}`}
+            onClick={generateDeepInsight}
+            disabled={generating}
+          >
+            {generating ? "Analyzing Content..." : "✨ Generate AI Review"}
+          </button>
+        </div>
+
+        {insight && (
+          <div className="insight-card fade-in">
+            <div className="insight-block">
+              <h4>💝 Emotional Summary</h4>
+              <p>{insight.emotionalSummary}</p>
+            </div>
+            
+            <div className="insight-block">
+              <h4>🕒 Retention & Content Analysis</h4>
+              <p>{insight.contentAnalysis}</p>
+            </div>
+
+            <div className="insight-block">
+              <h4>🚀 Recommended Improvements</h4>
+              <ul>
+                {insight.improvements.map((imp, idx) => (
+                  <li key={idx}>{imp}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="charts-container">
