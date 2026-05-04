@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import CourseCard from "./CourseCard";
 import "./Courses.css";
 import { Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const CoursePage = () => {
+  const { t } = useTranslation();
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,10 +51,9 @@ const CoursePage = () => {
 
           const userData = await userRes.json();
 
+          // userData.purchasedCourses contains { course: { ... }, enrolledAt: ... }
           setPurchasedCourses(
-            userData.purchasedCourses?.map(
-              (item) => item.course
-            ) || []
+            userData.purchasedCourses || []
           );
         }
 
@@ -69,7 +70,7 @@ const CoursePage = () => {
   return (
     <div className="student-course-page">
       <h1 className="student-course-title">
-        Explore Courses
+        {t("Explore Courses")}
       </h1>
 
       <div className="course-search-container">
@@ -77,7 +78,7 @@ const CoursePage = () => {
           <Search className="search-icon" size={20} />
           <input
             type="text"
-            placeholder="Search for courses, skills, or topics..."
+            placeholder={t("Search for courses, skills, or topics...")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -86,27 +87,51 @@ const CoursePage = () => {
 
       {loading ? (
         <p className="loading-text">
-          Loading courses...
-        </p>
-      ) : courses.length === 0 ? (
-        <p className="no-course-text">
-          No courses available yet.
+          {t("Loading courses...")}
         </p>
       ) : (
-        <div className="student-course-grid">
-          {courses.map((course) => {
-            const isEnrolled =
-              purchasedCourses.includes(course._id);
+        <>
+          {/* ✅ ENROLLED COURSES SECTION */}
+          {purchasedCourses.length > 0 && (
+            <div className="enrolled-section">
+              <h2 className="section-title">{t("My Enrolled Classrooms")}</h2>
+              <div className="student-course-grid enrolled-grid">
+                {purchasedCourses.map((item) => (
+                  <CourseCard
+                    key={item.course?._id}
+                    course={item.course}
+                    isEnrolled={true}
+                  />
+                ))}
+              </div>
+              <hr className="section-divider" />
+            </div>
+          )}
 
-            return (
-              <CourseCard
-                key={course._id}
-                course={course}
-                isEnrolled={isEnrolled}
-              />
-            );
-          })}
-        </div>
+          {/* ALL COURSES SECTION */}
+          <h2 className="section-title">{t("Recommended for You")}</h2>
+          {courses.length === 0 ? (
+            <p className="no-course-text">
+              {t("No courses available yet.")}
+            </p>
+          ) : (
+            <div className="student-course-grid">
+              {courses.map((course) => {
+                const isEnrolled = purchasedCourses.some(
+                  (p) => p.course?._id === course._id
+                );
+
+                return (
+                  <CourseCard
+                    key={course._id}
+                    course={course}
+                    isEnrolled={isEnrolled}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
