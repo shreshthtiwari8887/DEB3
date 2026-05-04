@@ -2,10 +2,12 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import TranslatedText from "../TranslatedText";
 import "./Courses.css";
 
 const CourseCard = ({ course, isEnrolled }) => {
+  const { t } = useTranslation();
 
   /* ✅ IMAGE HANDLER */
   const getImageUrl = (thumbnail) => {
@@ -49,7 +51,7 @@ const CourseCard = ({ course, isEnrolled }) => {
 
         {isEnrolled && (
           <span className="badge enrolled-badge">
-            Enrolled
+            {t("Enrolled")}
           </span>
         )}
       </div>
@@ -79,7 +81,7 @@ const CourseCard = ({ course, isEnrolled }) => {
               </span>
             </>
           ) : (
-            <span className="no-rating">No ratings yet</span>
+            <span className="no-rating">{t("No ratings yet")}</span>
           )}
         </div>
 
@@ -90,7 +92,7 @@ const CourseCard = ({ course, isEnrolled }) => {
 
         {/* Meta Info */}
         <div className="course-meta-row">
-          <span>🎥 {course.lectures?.length || 0} Lectures</span>
+          <span>🎥 {course.lectures?.length || 0} {t("Lectures")}</span>
 
           {course.publishDate && (
             <span>
@@ -112,7 +114,7 @@ const CourseCard = ({ course, isEnrolled }) => {
             to={`/course/${course._id}`}
             className="student-view-btn"
           >
-            View Course
+            {t("View Course")}
           </Link>
 
         </div>

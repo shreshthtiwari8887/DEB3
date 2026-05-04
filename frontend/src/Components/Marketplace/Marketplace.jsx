@@ -3,11 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../Cart/CartContext";
 import { initiateRazorpayPayment } from "../Cart/PaymentService";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 import TranslatedText from "../TranslatedText"; // ⭐ IMPORT
 import "./Marketplace.css";
 
 const Marketplace = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const isLoggedIn = localStorage.getItem("token");
   const { addToCart } = useCart();
 
@@ -105,14 +107,14 @@ const Marketplace = () => {
   return (
     <div className="marketplace-container">
       <div className="marketplace-header">
-        <h2 className="marketplace-title"><TranslatedText text="Tribal Marketplace" /></h2>
+        <h2 className="marketplace-title">{t("Tribal Marketplace")}</h2>
         {isLoggedIn && (
           <div className="go-to-cart">
             <span style={{ marginRight: "15px", fontWeight: "bold", color: "#f39c12" }}>
               💰 {userCoins} Coins
             </span>
             <Link to="/cart">
-              <button className="view-cart-btn"><TranslatedText text="Go to Cart" /></button>
+              <button className="view-cart-btn">{t("Go to Cart")}</button>
             </Link>
           </div>
         )}
@@ -120,7 +122,7 @@ const Marketplace = () => {
 
       <div className="items-container">
         {loading ? (
-          <p className="loading-msg"><TranslatedText text="Fetching items from the cloud..." /></p>
+          <p className="loading-msg">{t("Loading...")}</p>
         ) : dbProducts.length > 0 ? (
           dbProducts.map((item) => (
             <div key={item.id} className="item-card">
@@ -156,11 +158,11 @@ const Marketplace = () => {
 
                 <div className="stock-badge">
                   {item.stock === 0 ? (
-                    <span className="out"><TranslatedText text="Out of Stock" /></span>
+                    <span className="out">{t("Out of Stock")}</span>
                   ) : item.stock < 5 ? (
-                    <span className="few"><TranslatedText text="Few Left" /></span>
+                    <span className="few">{t("Few Left")}</span>
                   ) : (
-                    <span className="in"><TranslatedText text="In Stock" /></span>
+                    <span className="in">{t("In Stock")}</span>
                   )}
                 </div>
 
@@ -174,38 +176,38 @@ const Marketplace = () => {
                             className="add-to-cart-btn"
                             onClick={() => handleAddToCart(item)}
                           >
-                            <TranslatedText text="+ Cart" />
+                            {t("+ Cart")}
                           </button>
                           <button
                             className="buy-now-btn"
                             onClick={() => handleBuyNowClick(item.id)}
                           >
-                            <TranslatedText text="Buy Now" />
+                            {t("Buy Now")}
                           </button>
                         </div>
                       ) : (
                         <div className="coin-redemption-section">
-                          <p className="coin-text">Available Coins: {userCoins}</p>
+                          <p className="coin-text">{t("Available Coins")}: {userCoins}</p>
                           <label className="coin-checkbox-label">
                             <input
                               type="checkbox"
                               checked={useCoins}
                               onChange={(e) => setUseCoins(e.target.checked)}
                             />
-                            <span><TranslatedText text="Use coins (Save" /> ₹{userCoins})</span>
+                            <span>{t("Use coins (Save")} ₹{userCoins})</span>
                           </label>
                           <div className="final-btns">
                             <button
                               className="confirm-pay-btn"
                               onClick={() => handleFinalPayment(item)}
                             >
-                              <TranslatedText text="Pay" /> ₹{useCoins ? Math.max(0, item.price - userCoins) : item.price}
+                              {t("Pay")} ₹{useCoins ? Math.max(0, item.price - userCoins) : item.price}
                             </button>
                             <button
                               className="cancel-pay-btn"
                               onClick={() => setActiveBuyNowId(null)}
                             >
-                              <TranslatedText text="Cancel" />
+                              {t("Cancel")}
                             </button>
                           </div>
                         </div>
@@ -216,7 +218,7 @@ const Marketplace = () => {
 
                 <div className="view-details">
                   <Link to={`/product-view/${item.id}`} className="view-link">
-                    <TranslatedText text="View Details" /> →
+                    {t("View Details")} →
                   </Link>
                 </div>
               </div>
@@ -224,7 +226,7 @@ const Marketplace = () => {
             </div>
           ))
         ) : (
-          <p className="empty-msg"><TranslatedText text="No products available in the database yet." /></p>
+          <p className="empty-msg">{t("No products available in the database yet.")}</p>
         )}
       </div>
     </div>

@@ -4,12 +4,14 @@ import axios from "axios";
 import { useCart } from "../Cart/CartContext";
 import { initiateRazorpayPayment } from "../Cart/PaymentService";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import TranslatedText from "../TranslatedText"; // ⭐ IMPORT
 import "./ProductView.css";
 
 const ProductView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { enqueueSnackbar } = useSnackbar();
     const { addToCart } = useCart();
     const isLoggedIn = localStorage.getItem("token");
@@ -200,26 +202,26 @@ const ProductView = () => {
                     <div className="action-buttons">
                         {!isBuyNowActive ? (
                             <>
-                                <button className="buynow-btn" onClick={handleBuyNowClick}>BUY NOW</button>
-                                <button className="addtocart-btn" onClick={handleAddToCart}>ADD TO CART</button>
+                                <button className="buynow-btn" onClick={handleBuyNowClick}>{t("Buy Now")}</button>
+                                <button className="addtocart-btn" onClick={handleAddToCart}>{t("Add to Cart")}</button>
                             </>
                         ) : (
                             <div className="view-page-coin-section">
-                                <p className="coin-status-text">Available Coins: 💰 {userCoins}</p>
+                                <p className="coin-status-text">{t("Available Coins")}: 💰 {userCoins}</p>
                                 <label className="coin-label-view">
                                     <input
                                         type="checkbox"
                                         checked={useCoins}
                                         onChange={(e) => setUseCoins(e.target.checked)}
                                     />
-                                    <span>Use coins (Save ₹{userCoins})</span>
+                                    <span>{t("Use coins (Save")} ₹{userCoins})</span>
                                 </label>
                                 <div className="view-final-actions">
                                     <button className="confirm-pay-view" onClick={handleFinalPayment}>
-                                        Pay ₹{useCoins ? Math.max(0, product.price - userCoins) : product.price}
+                                        {t("Pay")} ₹{useCoins ? Math.max(0, product.price - userCoins) : product.price}
                                     </button>
                                     <button className="cancel-pay-view" onClick={() => setIsBuyNowActive(false)}>
-                                        Cancel
+                                        {t("Cancel")}
                                     </button>
                                 </div>
                             </div>
@@ -238,7 +240,7 @@ const ProductView = () => {
 
                     <div className="price-row">
                         <span className="current-price">₹{product.price}</span>
-                        <span className="stock-status">{product.stock > 0 ? "In Stock" : "Out of Stock"}</span>
+                        <span className="stock-status">{product.stock > 0 ? t("In Stock") : t("Out of Stock")}</span>
                     </div>
 
                     <div className="policy-section">
@@ -308,8 +310,8 @@ const ProductView = () => {
                                         <div className="spec-item"><span className="spec-label">Weight</span><span className="spec-value">{product.weight}</span></div>
                                     )}
                                     <div className="spec-item">
-                                        <span className="spec-label">Care Instructions</span>
-                                        <span className="spec-value">{product.careInstructions || "Handle with care"}</span>
+                                        <span className="spec-label">{t("Care Instructions")}</span>
+                                        <span className="spec-value"><TranslatedText text={product.careInstructions || "Handle with care"} /></span>
                                     </div>
                                 </div>
                             )}

@@ -114,15 +114,25 @@ const resources = {
       "Famous Places": "Famous Places",
       "Art, Culture & Tradition": "Art, Culture & Tradition",
       "Add Content": "Add Content",
-      "Back to Home": "Back to Home",
       "No content yet. Be the first to add!": "No content yet. Be the first to add!",
       "Submit": "Submit",
       "Learn More": "Learn More",
       "Title": "Title",
-      "Description": "Description",
       "Photo (Optional)": "Photo (Optional)",
       "Enter title": "Enter title",
-      "Enter detailed description": "Enter detailed description"
+      "Enter detailed description": "Enter detailed description",
+      "Available Coins": "Available Coins",
+      "Use coins (Save": "Use coins (Save",
+      "Pay": "Pay",
+      "Cancel": "Cancel",
+      "In Stock": "In Stock",
+      "Out of Stock": "Out of Stock",
+      "Care Instructions": "Care Instructions",
+      "Lectures": "Lectures",
+      "Tribal Marketplace": "Tribal Marketplace",
+      "Go to Cart": "Go to Cart",
+      "Few Left": "Few Left",
+      "View Details": "View Details"
     }
   },
   hi: {
@@ -232,7 +242,19 @@ const resources = {
       "No products found": "कोई उत्पाद नहीं मिला",
       "Loading...": "लोड हो रहा है...",
       "Error": "त्रुटि",
-      "Success": "सफल"
+      "Success": "सफल",
+      "Available Coins": "उपलब्ध सिक्के",
+      "Use coins (Save": "सिक्कों का उपयोग करें (बचाएं",
+      "Pay": "भुगतान करें",
+      "Cancel": "रद्द करें",
+      "In Stock": "स्टॉक में",
+      "Out of Stock": "स्टॉक में नहीं",
+      "Care Instructions": "रखरखाव के निर्देश",
+      "Lectures": "लेक्चर",
+      "Tribal Marketplace": "जनजातीय बाजार",
+      "Go to Cart": "कार्ट पर जाएं",
+      "Few Left": "कुछ ही बचे हैं",
+      "View Details": "विवरण देखें"
     }
   }
 };

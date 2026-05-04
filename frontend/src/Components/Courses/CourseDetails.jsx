@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./CourseDetails.css";
+import { useTranslation } from "react-i18next";
 import TranslatedText from "../TranslatedText";
 import { jsPDF } from "jspdf";
 
 const CourseDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const token = localStorage.getItem("token");
 
   const [course, setCourse] = useState(null);
@@ -208,8 +210,8 @@ const generateAIOverview = () => {
               ? new Date(course.publishDate).toLocaleDateString("en-IN")
               : "Not Published"}
           </span>
-          <span>🎥 {course.lectures?.length || 0} Lectures</span>
-          <span>⏳ {course.duration}</span>
+          <span>🎥 {course.lectures?.length || 0} {t("Lectures")}</span>
+          <span>⏳ <TranslatedText text={course.duration} /></span>
         </div>
       </div>
 
@@ -264,13 +266,13 @@ const generateAIOverview = () => {
                       className="cd2-enroll-btn"
                       onClick={() => navigate(`/enroll/${id}`)}
                     >
-                      Enroll Now
+                      {t("Enroll Now")}
                     </button>
                   )}
 
                   {isEnrolled && (
                     <div className="cd2-enrolled-badge">
-                      ✅ You are enrolled
+                      ✅ {t("Already Enrolled")}
                     </div>
                   )}
                 </div>
@@ -351,7 +353,7 @@ const generateAIOverview = () => {
       />
 
       <button onClick={handleSubmitReview}>
-        Submit Review
+        {t("Submit")}
       </button>
 
     </div>
