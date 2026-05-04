@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom"; // Added Link for the home link
+import TeacherAnalytics from "./TeacherAnalytics";
 import "./TeacherProfile.css";
 
 const TeacherProfile = () => {
@@ -9,6 +10,7 @@ const TeacherProfile = () => {
   const [teacherDetails, setTeacherDetails] = useState({});
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true); // Added to track initial data load
+  const [activeTab, setActiveTab] = useState("profile"); // Tab state
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -185,7 +187,24 @@ const TeacherProfile = () => {
   return (
     <div className="teacher-dashboard">
 
-      <div className="dashboard-header">
+      <div className="teacher-tabs">
+        <button 
+          className={activeTab === "profile" ? "active-tab" : ""} 
+          onClick={() => setActiveTab("profile")}
+        >
+          Profile & Courses
+        </button>
+        <button 
+          className={activeTab === "analytics" ? "active-tab" : ""} 
+          onClick={() => setActiveTab("analytics")}
+        >
+          Analytics Dashboard
+        </button>
+      </div>
+
+      {activeTab === "profile" ? (
+        <>
+          <div className="dashboard-header">
 
         {!isEditing ? (
           <>
@@ -411,6 +430,10 @@ const TeacherProfile = () => {
           <p>No quiz attempts yet.</p>
         )}
       </div>
+        </>
+      ) : (
+        <TeacherAnalytics token={token} />
+      )}
 
     </div>
   );

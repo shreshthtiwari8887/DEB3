@@ -3,6 +3,7 @@ const { User, validate } = require("../models/user");
 const bcrypt = require("bcrypt");
 const auth = require("../middleware/auth");
 const Product = require("../models/product");
+const emailValidator = require("deep-email-validator");
 
 /* ===========================
    REGISTER USER
@@ -12,6 +13,14 @@ router.post("/", async (req, res) => {
     const { error } = validate(req.body);
     if (error)
       return res.status(400).send({ message: error.details[0].message });
+
+    // Validate email deeply (MX records, typos, disposable domains)
+    const emailValidationResult = await emailValidator.validate(req.body.email);
+    if (!emailValidationResult.valid) {
+      return res.status(400).send({
+        message: "Please provide a valid and active email address."
+      });
+    }
 
     const user = await User.findOne({ email: req.body.email });
     if (user) {
@@ -139,7 +148,40 @@ router.get("/admin/pending/:role", async (req, res) => {
   }
 });
 
-// 2. Universal Verify Route
+// 1.5 Get Verified/Active Users by Role
+router.get("/admin/verified/:role", async (req, res) => {
+  try {
+    const { role } = req.params;
+    let query = { role: role };
+    
+    // For teachers and vendors, they must be verified. Normal users don't need verification.
+    if (role === "teacher" || role === "vendor") {
+      query.isVerified = true;
+    }
+
+    const verifiedUsers = await User.find(query);
+    res.status(200).send({ users: verifiedUsers });
+  } catch (error) {
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+// 2. Get Admin Stats (Registered counts)
+router.get("/admin/stats", async (req, res) => {
+  try {
+    const verifiedTeachersCount = await User.countDocuments({ role: "teacher", isVerified: true });
+    const verifiedVendorsCount = await User.countDocuments({ role: "vendor", isVerified: true });
+    
+    res.status(200).send({ 
+      teachers: verifiedTeachersCount, 
+      vendors: verifiedVendorsCount 
+    });
+  } catch (error) {
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+// 3. Universal Verify Route
 router.put("/admin/verify-user/:id", async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.params.id, { isVerified: true });

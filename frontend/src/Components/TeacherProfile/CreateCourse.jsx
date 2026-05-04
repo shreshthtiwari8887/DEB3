@@ -16,6 +16,41 @@ const CreateCourse = () => {
 
   const [thumbnail, setThumbnail] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [predicting, setPredicting] = useState(false);
+
+  const handlePredictPrice = async () => {
+    if (!courseData.category) {
+      alert("Please enter a category first so the AI can analyze similar courses.");
+      return;
+    }
+    
+    setPredicting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/courses/predict-price", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": token
+        },
+        body: JSON.stringify({
+          category: courseData.category,
+          duration: courseData.duration
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setCourseData(prev => ({ ...prev, price: data.suggestedPrice }));
+      } else {
+        alert(data.message || "Prediction failed.");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error contacting ML predictor.");
+    }
+    setPredicting(false);
+  };
 
   const handleChange = (e) => {
     setCourseData({
@@ -132,14 +167,26 @@ const CreateCourse = () => {
             onChange={handleChange}
           />
 
-          <input
-            type="number"
-            name="price"
-            placeholder="Price (₹)"
-            value={courseData.price}
-            onChange={handleChange}
-            required
-          />
+          <div className="price-input-group" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <input
+              type="number"
+              name="price"
+              placeholder="Price (₹)"
+              value={courseData.price}
+              onChange={handleChange}
+              required
+              style={{ flex: 1 }}
+            />
+            <button 
+              type="button" 
+              className="ai-predict-btn" 
+              onClick={handlePredictPrice}
+              disabled={predicting}
+              style={{ padding: "10px 15px", backgroundColor: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold", whiteSpace: "nowrap" }}
+            >
+              {predicting ? "✨ Analyzing Market..." : "✨ AI Predict Price"}
+            </button>
+          </div>
         </div>
 
         <div className="form-section">

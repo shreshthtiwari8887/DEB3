@@ -23,6 +23,52 @@
   color: #64748b;
 }
 
+/* ===================================================
+   SEARCH BAR
+=================================================== */
+
+.course-search-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.course-search-bar {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: 30px;
+  padding: 12px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.course-search-bar:focus-within {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.search-icon {
+  color: #94a3b8;
+  margin-right: 12px;
+}
+
+.course-search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #334155;
+  background: transparent;
+}
+
+.course-search-bar input::placeholder {
+  color: #94a3b8;
+}
 
 /* ===================================================
    COURSE GRID

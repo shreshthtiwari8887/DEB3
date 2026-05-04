@@ -41,6 +41,11 @@ const lectureSchema = new mongoose.Schema({
 
   updatedAt: {
     type: Date
+  },
+
+  notes: {
+    type: String,
+    default: ""
   }
 
 }, { _id: true });
@@ -71,6 +76,17 @@ const reviewSchema = new mongoose.Schema({
   comment: {
     type: String,
     default: ""
+  },
+
+  sentimentScore: {
+    type: Number,
+    default: 0
+  },
+
+  sentimentCategory: {
+    type: String,
+    enum: ["Positive", "Negative", "Neutral"],
+    default: "Neutral"
   },
 
   createdAt: {

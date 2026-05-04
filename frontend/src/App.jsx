@@ -25,6 +25,7 @@ import EnrollCourse from "./Components/Courses/EnrollCourse";
 import VendorProfile from "./Components/VendorProfile/VendorProfile";
 import EditVendorProfile from "./Components/VendorProfile/EditVendorProfile";
 import ProductDetails from "./Components/VendorProfile/ProductDetails";
+import ProductView from "./Components/Marketplace/ProductView"; // ⭐ NEW
 import { CartProvider } from "./Components/Cart/CartContext";
 import AdminDashboard from "./Components/Admin/AdminDashboard";
 import AdminRoute from "./Components/Admin/AdminRoute";
@@ -118,6 +119,7 @@ function App() {
                 <Route path="/product/:id" element={<ProductDetails />} />
 
                 <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/product-view/:id" element={<ProductView />} /> {/* ⭐ NEW */}
                 <Route path="/cart" element={<Cart />} />
                 <Route
                   path="/admin-dashboard"

@@ -120,6 +120,7 @@ const userSchema = new mongoose.Schema(
     /* LMS */
     purchasedCourses: [purchasedCourseSchema],
     purchasedProducts: [purchasedProductSchema],
+    searchHistory: { type: [String], default: [] },
   },
   { timestamps: true }
 );
@@ -140,8 +141,12 @@ userSchema.methods.generateAuthToken = function () {
 =========================== */
 const validate = (data) => {
   const schema = Joi.object({
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
+    firstName: Joi.string().pattern(/^[A-Za-z\s]+$/).required().label("First Name").messages({
+      "string.pattern.base": "First name should only contain letters.",
+    }),
+    lastName: Joi.string().pattern(/^[A-Za-z\s]+$/).required().label("Last Name").messages({
+      "string.pattern.base": "Last name should only contain letters.",
+    }),
     email: Joi.string().email().required(),
     password: passwordComplexity().required(),
 

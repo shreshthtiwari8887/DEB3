@@ -14,8 +14,46 @@ const ProductManager = ({ token }) => {
     title: "", price: "", category: "", stock: "", description: "", detailsUrl: "", images: [] 
   });
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [predicting, setPredicting] = useState(false);
 
   useEffect(() => { fetchProducts(); }, []);
+
+  const handlePredictPrice = async () => {
+    if (!formData.title || !formData.description) {
+      alert("Please enter a Title and Description first so the AI can validate the product.");
+      return;
+    }
+
+    if (!formData.images || formData.images.length === 0) {
+      alert("Please upload at least 1 image of the product. The AI must visually validate it.");
+      return;
+    }
+    
+    setPredicting(true);
+    try {
+      // Create FormData to send image and text
+      const aiData = new FormData();
+      aiData.append("title", formData.title);
+      aiData.append("description", formData.description);
+      aiData.append("image", formData.images[0]); // Send first image for analysis
+
+      const res = await axios.post("http://localhost:8080/api/products/predict-price-multimodal", 
+        aiData,
+        { headers: { "x-auth-token": token, "Content-Type": "multipart/form-data" } }
+      );
+      
+      if (res.data.match === false) {
+        alert(`🚫 AI Validation Failed: ${res.data.reason}`);
+      } else {
+        alert(`✅ AI Validation Passed: ${res.data.reason}`);
+        setFormData(prev => ({ ...prev, price: res.data.predictedPrice }));
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || "Error contacting AI Vision Predictor.");
+    }
+    setPredicting(false);
+  };
 
   const fetchProducts = async () => {
     try {
@@ -87,9 +125,18 @@ const ProductManager = ({ token }) => {
           <form className="edit-form" onSubmit={handleAddProduct}>
             <input type="text" placeholder="Title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required />
             
-            <div className="form-row">
-              <input type="number" placeholder="Price" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} required />
+            <div className="form-row" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <input type="number" placeholder="Price" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} required style={{ flex: 1 }} />
               
+              <button 
+                type="button" 
+                onClick={handlePredictPrice}
+                disabled={predicting}
+                style={{ padding: "10px 15px", backgroundColor: "#8b5cf6", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold", whiteSpace: "nowrap" }}
+              >
+                {predicting ? "👁️ Analyzing Image..." : "✨ AI Predict Price & Validate"}
+              </button>
+
               {/* ⭐ Fix: Stock input with min="0" to prevent negatives */}
               <input 
                 type="number" 

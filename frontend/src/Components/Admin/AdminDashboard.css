@@ -240,3 +240,8 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+/* ? NEW ADMIN TABS STYLING */
+.admin-tabs { border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+.admin-tab-btn { padding: 10px 20px; background-color: transparent; border: none; border-radius: 6px; font-size: 1rem; font-weight: 600; color: #64748b; cursor: pointer; transition: all 0.2s ease-in-out; }
+.admin-tab-btn:hover { background-color: #f1f5f9; color: #334155; }
+.admin-tab-btn.active { background-color: #6366f1; color: white; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2); }

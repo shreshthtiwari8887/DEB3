@@ -2,6 +2,34 @@ const router = require("express").Router();
 const StateContent = require("../models/stateContent");
 const StateHeader = require("../models/stateHeader");
 const upload = require("../middleware/upload");
+const auth = require("../middleware/auth"); // ⭐ NEW
+
+/* ===========================
+   GET PENDING CONTENT (ADMIN)
+=========================== */
+router.get("/admin/pending", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).send({ message: "Forbidden" });
+    const pending = await StateContent.find({ isApproved: false }).sort({ createdAt: -1 });
+    res.json({ success: true, data: pending });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/* ===========================
+   APPROVE CONTENT (ADMIN)
+=========================== */
+router.patch("/admin/approve/:id", auth, async (req, res) => {
+  try {
+    if (req.user.role !== "admin") return res.status(403).send({ message: "Forbidden" });
+    const content = await StateContent.findByIdAndUpdate(req.params.id, { isApproved: true }, { new: true });
+    if (!content) return res.status(404).json({ success: false, error: "Not found" });
+    res.json({ success: true, data: content });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 /* ===========================
    GET CONTENT BY STATE
@@ -9,7 +37,8 @@ const upload = require("../middleware/upload");
 router.get("/:stateName", async (req, res) => {
   try {
     const { stateName } = req.params;
-    const contents = await StateContent.find({ stateName }).sort({ createdAt: -1 });
+    // ⭐ ONLY fetch approved content for the public
+    const contents = await StateContent.find({ stateName, isApproved: true }).sort({ createdAt: -1 });
 
     // Grouping items by category for frontend convenience
     const grouped = {
@@ -48,12 +77,57 @@ router.post("/:stateName", upload.single("image"), async (req, res) => {
       return res.status(400).json({ success: false, error: "Missing required fields" });
     }
 
+    // ⭐ TIER 1: AI FACT-CHECKING (GEMINI)
+    let aiFactCheckReason = "AI validation passed.";
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (apiKey && apiKey !== "your_api_key_here") {
+        const prompt = `
+          You are an expert Indian Historian. Analyze the following content about the Indian state of ${stateName}.
+          Title: ${title}
+          Description: ${description}
+          Category: ${category}
+          
+          Is this culturally, geographically, and historically accurate? 
+          Respond strictly with a JSON object format: 
+          {"isAccurate": boolean, "reason": "A 1-sentence historical explanation."}
+        `;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const aiData = await response.json();
+        let rawText = aiData.candidates[0].content.parts[0].text;
+        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+        const aiAnalysis = JSON.parse(rawText);
+
+        if (aiAnalysis.isAccurate === false) {
+          // 🚫 TIER 1 REJECTION
+          return res.status(403).json({
+            success: false,
+            error: `AI Fact-Check Failed: ${aiAnalysis.reason}`
+          });
+        }
+        
+        // Allowed, store reason for Admin Review
+        aiFactCheckReason = aiAnalysis.reason;
+      }
+    } catch (aiErr) {
+      console.error("Gemini Fact Check Error:", aiErr);
+      aiFactCheckReason = "AI validation skipped due to network error.";
+    }
+
     const newContent = new StateContent({
       stateName,
       category,
       title,
       description,
-      imageUrl: req.file ? req.file.path : null, // Cloudinary path
+      imageUrl: req.file ? req.file.path : null,
+      isApproved: false, // ⭐ TIER 2: ADMIN SANDBOX
+      aiFactCheck: aiFactCheckReason
     });
 
     await newContent.save();

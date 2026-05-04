@@ -1,0 +1,1 @@
+require('mongoose').connect('mongodb://127.0.0.1:27017/userlogin').then(() => require('./models/product').countDocuments({'images': { $size: 0 }}).then(c => { console.log('Empty images:', c); process.exit(0); }));

@@ -3,9 +3,13 @@ const mongoose = require("mongoose");
 const Course = require("../models/course");
 const { User } = require("../models/user");
 const auth = require("../middleware/auth");
+const jwt = require("jsonwebtoken");
+const Sentiment = require('sentiment');
+const sentiment = new Sentiment();
 
 /* ✅ USE CLOUDINARY INSTEAD OF LOCAL MULTER */
 const upload = require("../middleware/upload");
+const aiModerator = require("../middleware/aiModerator"); // ⭐ NEW
 
 /* ===========================
    HELPER → Convert YouTube URL
@@ -53,6 +57,73 @@ const calculateExpiry = (durationText) => {
 ========================================================= */
 
 /* ===========================
+   ML PRICE PREDICTOR (KNN)
+=========================== */
+router.post("/predict-price", auth, async (req, res) => {
+  try {
+    const { category, duration } = req.body;
+    
+    if (!category) {
+      return res.status(400).send({ message: "Category is required for prediction." });
+    }
+
+    // Convert duration to approximate weeks for distance calculation
+    const getWeeks = (dur) => {
+      if (!dur) return 4; // default 4 weeks
+      const lower = dur.toLowerCase();
+      const num = parseInt(lower) || 4;
+      if (lower.includes("day")) return num / 7;
+      if (lower.includes("month")) return num * 4;
+      return num; // assume weeks if not specified, or if explicitly weeks
+    };
+
+    const targetWeeks = getWeeks(duration);
+
+    // Fetch all published courses in the same category
+    const similarCourses = await Course.find({ category: { $regex: new RegExp(`^${category}$`, 'i') }, isPublished: true });
+
+    if (similarCourses.length === 0) {
+      return res.status(200).send({ suggestedPrice: 499, message: "No similar courses found. Default price suggested." });
+    }
+
+    // Calculate Euclidean distance based on duration and ratings
+    const coursesWithDistance = similarCourses.map(course => {
+      const courseWeeks = getWeeks(course.duration);
+      // Distance formula: sqrt((targetWeeks - courseWeeks)^2)
+      // We also slightly penalize courses with bad ratings to not recommend their prices as highly
+      const ratingPenalty = course.averageRating ? (5 - course.averageRating) * 2 : 5; 
+      
+      const distance = Math.sqrt(Math.pow(targetWeeks - courseWeeks, 2)) + ratingPenalty;
+      
+      return {
+        price: course.price || 0,
+        distance
+      };
+    });
+
+    // Sort by closest distance
+    coursesWithDistance.sort((a, b) => a.distance - b.distance);
+
+    // Take top K=5 neighbors
+    const k = Math.min(5, coursesWithDistance.length);
+    const topK = coursesWithDistance.slice(0, k);
+
+    // Calculate average price of K nearest neighbors
+    const sumPrice = topK.reduce((sum, c) => sum + c.price, 0);
+    const avgPrice = sumPrice / k;
+
+    // Apply a competitive variance (-5%) to suggest an optimal market-entry price
+    const suggestedPrice = Math.max(99, Math.floor(avgPrice * 0.95)); // Minimum price 99
+
+    res.status(200).send({ suggestedPrice });
+
+  } catch (error) {
+    console.error("ML Prediction Error:", error);
+    res.status(500).send({ message: "Error predicting price" });
+  }
+});
+
+/* ===========================
    GET TEACHER COURSES
 =========================== */
 router.get("/teacher", auth, async (req, res) => {
@@ -81,10 +152,87 @@ router.get("/teacher", auth, async (req, res) => {
 =========================== */
 router.get("/", async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true })
-      .populate("teacher", "-password"); // ✅ FIXED
+    const { search } = req.query;
+    let query = { isPublished: true };
 
-    res.send(courses);
+    if (search) {
+      query.$or = [
+        { courseName: { $regex: search, $options: "i" } },
+        { category: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    let courses = await Course.find(query).populate("teacher", "-password").lean();
+
+    const token = req.header("x-auth-token");
+    let userPastCategories = new Set();
+    let userPastTeachers = new Set();
+    let userSearchHistory = [];
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWTPRIVATEKEY);
+        const user = await User.findById(decoded._id).populate("purchasedCourses.course");
+        if (user) {
+          if (user.purchasedCourses) {
+            user.purchasedCourses.forEach(pc => {
+              if (pc.course) {
+                if (pc.course.category) userPastCategories.add(pc.course.category);
+                if (pc.course.teacher) userPastTeachers.add(pc.course.teacher.toString());
+              }
+            });
+          }
+          userSearchHistory = user.searchHistory || [];
+
+          if (search && search.trim().length >= 3) {
+            userSearchHistory.unshift(search.trim());
+            userSearchHistory = [...new Set(userSearchHistory)].slice(0, 10);
+            user.searchHistory = userSearchHistory;
+            await user.save();
+          }
+        }
+      } catch (err) {
+        console.error("Optional Auth error:", err.message);
+      }
+    }
+
+    courses = courses.map(c => {
+      let score = 0;
+      
+      // 1. History Match (+30 pts)
+      if (userPastCategories.has(c.category)) score += 30;
+      
+      const validSearchTerms = userSearchHistory.filter(term => term && term.length >= 3);
+      const searchHit = validSearchTerms.some(term => 
+        (c.courseName && c.courseName.toLowerCase().includes(term.toLowerCase())) ||
+        (c.category && c.category.toLowerCase().includes(term.toLowerCase()))
+      );
+      if (searchHit) score += 30;
+
+      // 2. Creator/Teacher Affinity (+20 pts)
+      if (c.teacher && c.teacher._id && userPastTeachers.has(c.teacher._id.toString())) {
+        score += 20;
+      }
+
+      // 3. Quality & Trending (up to +10 pts)
+      const ratingBonus = (c.averageRating || 0) * 1; 
+      const enrollmentBonus = Math.min(5, ((c.totalEnrollments || 0) / 1000) * 5);
+      score += ratingBonus + enrollmentBonus;
+
+      // 4. Exploration/Dynamic (+0 to +10 pts)
+      const randomJitter = Math.random() * 10;
+      score += randomJitter;
+
+      return { ...c, affinityScore: score };
+    });
+
+    courses.sort((a, b) => b.affinityScore - a.affinityScore);
+    
+    // Return top 100 to simulate a curated feed and improve performance
+    const topCourses = courses.slice(0, 100);
+
+    res.send(topCourses);
   } catch (error) {
     console.error(error);
     res.status(500).send({ message: "Internal Server Error" });
@@ -114,7 +262,7 @@ router.get("/:id", async (req, res) => {
 /* ===========================
    CREATE COURSE (CLOUDINARY)
 =========================== */
-router.post("/create", auth, upload.single("thumbnail"), async (req, res) => {
+router.post("/create", auth, upload.single("thumbnail"), aiModerator, async (req, res) => {
   try {
     if (req.user.role !== "teacher")
       return res.status(403).send({ message: "Only teachers can create courses" });
@@ -393,12 +541,25 @@ router.post("/:id/review", auth, async (req, res) => {
     if (alreadyReviewed)
       return res.status(400).send({ message: "You already reviewed this course" });
 
+    // ✅ Analyze Sentiment
+    let sentimentScore = 0;
+    let sentimentCategory = "Neutral";
+    
+    if (comment) {
+      const result = sentiment.analyze(comment);
+      sentimentScore = result.score;
+      if (sentimentScore > 0) sentimentCategory = "Positive";
+      else if (sentimentScore < 0) sentimentCategory = "Negative";
+    }
+
     // ✅ Add review
     course.reviews.push({
       user: req.user._id,
       userName: `${user.firstName} ${user.lastName}`,
       rating,
-      comment
+      comment,
+      sentimentScore,
+      sentimentCategory
     });
 
     // ⭐ Calculate average rating
@@ -444,6 +605,67 @@ router.patch("/:id/publish", auth, async (req, res) => {
 
   } catch (error) {
     console.error(error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+/* ===========================
+   📈 TEACHER ANALYTICS
+=========================== */
+router.get("/teacher/analytics", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user || user.role !== "teacher") {
+      return res.status(403).send({ message: "Access denied. Teachers only." });
+    }
+
+    const courses = await Course.find({ teacher: user._id }).lean();
+    
+    let totalEnrollments = 0;
+    let averageRatingSum = 0;
+    let coursesWithRatings = 0;
+    
+    let sentimentCounts = {
+      Positive: 0,
+      Negative: 0,
+      Neutral: 0
+    };
+    
+    let courseEnrollments = [];
+
+    courses.forEach(course => {
+      totalEnrollments += (course.totalEnrollments || 0);
+      courseEnrollments.push({
+        name: course.courseName,
+        enrollments: course.totalEnrollments || 0
+      });
+      
+      if (course.averageRating > 0) {
+        averageRatingSum += course.averageRating;
+        coursesWithRatings++;
+      }
+      
+      if (course.reviews && course.reviews.length > 0) {
+        course.reviews.forEach(review => {
+          if (review.sentimentCategory) {
+            sentimentCounts[review.sentimentCategory]++;
+          }
+        });
+      }
+    });
+
+    const averageRating = coursesWithRatings > 0 ? (averageRatingSum / coursesWithRatings).toFixed(1) : 0;
+
+    res.send({
+      totalCourses: courses.length,
+      totalEnrollments,
+      averageRating,
+      sentimentCounts,
+      courseEnrollments: courseEnrollments.sort((a,b) => b.enrollments - a.enrollments).slice(0, 5) // top 5 courses
+    });
+
+  } catch (error) {
+    console.error("Analytics Error:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 });

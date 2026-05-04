@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import styles from "./styles.module.css";
-import { FaEye, FaEyeSlash, FaCloudUploadAlt } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaCloudUploadAlt,
+  FaCheck,
+  FaTimes,
+} from "react-icons/fa";
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,18 +24,43 @@ const Signup = () => {
     expertise: "",
     experience: "",
     shopName: "",
-    phone: ""
+    phone: "",
   });
 
+  const [metrics, setMetrics] = useState({
+    minChar: false,
+    upper: false,
+    lower: false,
+    number: false,
+    special: false,
+  });
+
+  const [isEmailValid, setIsEmailValid] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
+  useEffect(() => {
+    // Password Validation (Including Lowercase check)
+    setMetrics({
+      minChar: data.password.length >= 8,
+      upper: /[A-Z]/.test(data.password),
+      lower: /[a-z]/.test(data.password),
+      number: /[0-9]/.test(data.password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(data.password),
+    });
+
+    // Email Validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (data.email.length > 0) {
+      setIsEmailValid(emailRegex.test(data.email));
+    } else {
+      setIsEmailValid(true);
+    }
+  }, [data.password, data.email]);
+
   const handleChange = ({ currentTarget: input }) => {
-    setData(prev => ({
-      ...prev,
-      [input.name]: input.value
-    }));
+    setData((prev) => ({ ...prev, [input.name]: input.value }));
     setError("");
   };
 
@@ -39,47 +70,56 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isEmailValid) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(data.firstName) || !nameRegex.test(data.lastName)) {
+      setError("First and Last names should only contain letters.");
+      return;
+    }
+
+    const isPasswordSecure = Object.values(metrics).every(Boolean);
+    if (!isPasswordSecure) {
+      setError("Please meet all password requirements.");
+      return;
+    }
+
     setUploading(true);
-    setError(""); // Purana error saaf karein
+    setError("");
 
     try {
       let documentUrl = "";
-
-      // 1. Cloudinary Upload (Only for Vendor)
-      if (file && data.role === "vendor"|| data.role === "teacher") {
+      if (file && (data.role === "vendor" || data.role === "teacher")) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_PRESET);
-        
+        formData.append(
+          "upload_preset",
+          import.meta.env.VITE_CLOUDINARY_PRESET
+        );
         const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
         const uploadRes = await axios.post(
           `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
           formData
         );
         documentUrl = uploadRes.data.secure_url;
-      }else if (!file && (data.role === "vendor" || data.role === "teacher")) {
-        // Validation check if file is missing for these roles
-        setError("Please upload a verification document.");
+      } else if (!file && (data.role === "vendor" || data.role === "teacher")) {
+        setError(`Please upload ${data.role === "vendor" ? "Shop License/Aadhar" : "Certificate/Aadhar"}.`);
         setUploading(false);
         return;
-    }
+      }
 
-      // 2. API Call to Backend (Sirf EK baar call karein)
       const url = "http://localhost:8080/api/users";
       const payload = { ...data, documentUrl };
-      
       const response = await axios.post(url, payload);
-      
-      // 3. Success Handling
-      const successMsg = response.data.message || "Account created! Waiting for Admin Approval.";
-      enqueueSnackbar(successMsg, { variant: "success" });
-
-      // Redirect to login after a short delay
+      enqueueSnackbar(response.data.message || "Account created!", {
+        variant: "success",
+      });
       setTimeout(() => navigate("/login"), 1200);
-
     } catch (err) {
-      console.error("Signup Error:", err);
-      // Backend se aane wala error message dikhayein
       const errorMsg = err.response?.data?.message || "Server error";
       setError(errorMsg);
       enqueueSnackbar(errorMsg, { variant: "error" });
@@ -87,139 +127,183 @@ const Signup = () => {
       setUploading(false);
     }
   };
-  
+
   return (
     <div className={styles.signup_container}>
       <div className={styles.signup_form_container}>
         <div className={styles.left}>
           <h1>Welcome Back</h1>
           <Link to="/login">
-            <button type="button" className={styles.white_btn}>Sign In</button>
+            <button type="button" className={styles.white_btn}>
+              Sign In
+            </button>
           </Link>
         </div>
         <div className={styles.right}>
           <form className={styles.form_container} onSubmit={handleSubmit}>
             <h1>Create Account</h1>
 
-            <input
-              type="text"
-              placeholder="First Name"
-              name="firstName"
-              value={data.firstName}
-              onChange={handleChange}
-              required
-              className={styles.input}
-            />
-
-            <input
-              type="text"
-              placeholder="Last Name"
-              name="lastName"
-              value={data.lastName}
-              onChange={handleChange}
-              required
-              className={styles.input}
-            />
-
-            <input
-              type="email"
-              placeholder="Email"
-              name="email"
-              value={data.email}
-              onChange={handleChange}
-              required
-              className={styles.input}
-            />
-
-            <div className={styles.password_wrapper}>
+            <div className={styles.grid_row}>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                name="password"
-                value={data.password}
+                type="text"
+                placeholder="First Name"
+                name="firstName"
+                value={data.firstName}
                 onChange={handleChange}
                 required
                 className={styles.input}
               />
-              <div className={styles.eye_icon} onClick={() => setShowPassword(!showPassword)}>
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </div>
+              <input
+                type="text"
+                placeholder="Last Name"
+                name="lastName"
+                value={data.lastName}
+                onChange={handleChange}
+                required
+                className={styles.input}
+              />
             </div>
 
-            {data.role === "teacher" && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Expertise"
-                  name="expertise"
-                  value={data.expertise}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-                <input
-                  type="text"
-                  placeholder="Experience"
-                  name="experience"
-                  value={data.experience}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </>
-            )}
+            <div className={styles.full_width}>
+              <input
+                type="email"
+                placeholder="Email"
+                name="email"
+                value={data.email}
+                onChange={handleChange}
+                required
+                className={`${styles.input} ${!isEmailValid && data.email.length > 0 ? styles.input_error : ""}`}
+              />
+              {!isEmailValid && data.email.length > 0 && (
+                <span className={styles.email_hint}>
+                  Enter a valid email format
+                </span>
+              )}
+            </div>
 
-            {data.role === "vendor" && (
-              <>
+            <div className={styles.grid_row}>
+              <div className={styles.password_wrapper}>
                 <input
-                  type="text"
-                  placeholder="Shop Name"
-                  name="shopName"
-                  value={data.shopName}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  name="password"
+                  value={data.password}
                   onChange={handleChange}
                   required
                   className={styles.input}
                 />
-                <input
-                  type="text"
-                  placeholder="Phone"
-                  name="phone"
-                  value={data.phone}
-                  onChange={handleChange}
-                  required
-                  className={styles.input}
-                />
-              </>
-            )}
-
-            {/* Document Upload for Teacher/Vendor */}
-            {(data.role === "vendor" || data.role === "teacher") && (
-              <div className={styles.file_upload_wrapper}>
-                <label htmlFor="doc">
-                   <FaCloudUploadAlt /> {data.role === "vendor" ? "Upload Shop License/Aadhar" : "Upload Teaching Certificate/Aadhar"}
-                </label>
-                <input 
-                  type="file" 
-                  id="doc" 
-                  onChange={handleFileChange} 
-                  required 
-                />
-                {file && <span className={styles.file_name}>{file.name}</span>}
+                <div
+                  className={styles.eye_icon}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </div>
               </div>
-            )}
 
-            <select
-              name="role"
-              value={data.role}
-              onChange={handleChange}
-              className={styles.input}
-            >
-              <option value="user">User</option>
-              <option value="teacher">Teacher</option>
-              <option value="vendor">Vendor</option>
-            </select>
+              {data.password.length > 0 && (
+                <div className={styles.validation_box}>
+                  <div className={metrics.minChar ? styles.v_item_valid : styles.v_item_invalid}>
+                    <FaCheck /> 8+ Chars
+                  </div>
+                  <div className={metrics.upper ? styles.v_item_valid : styles.v_item_invalid}>
+                    <FaCheck /> Uppercase
+                  </div>
+                  <div className={metrics.lower ? styles.v_item_valid : styles.v_item_invalid}>
+                    <FaCheck /> Lowercase
+                  </div>
+                  <div className={metrics.number ? styles.v_item_valid : styles.v_item_invalid}>
+                    <FaCheck /> Number
+                  </div>
+                  <div className={metrics.special ? styles.v_item_valid : styles.v_item_invalid}>
+                    <FaCheck /> Special
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.grid_row}>
+              {data.role === "teacher" && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Expertise (e.g. Maths)"
+                    name="expertise"
+                    value={data.expertise}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Experience (Years)"
+                    name="experience"
+                    value={data.experience}
+                    onChange={handleChange}
+                    className={styles.input}
+                  />
+                </>
+              )}
+              {data.role === "vendor" && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Shop Name"
+                    name="shopName"
+                    value={data.shopName}
+                    onChange={handleChange}
+                    required
+                    className={styles.input}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone"
+                    name="phone"
+                    value={data.phone}
+                    onChange={handleChange}
+                    required
+                    className={styles.input}
+                  />
+                </>
+              )}
+            </div>
+
+            <div className={styles.grid_row}>
+              <select
+                name="role"
+                value={data.role}
+                onChange={handleChange}
+                className={styles.input}
+              >
+                <option value="user">User</option>
+                <option value="teacher">Teacher</option>
+                <option value="vendor">Vendor</option>
+              </select>
+
+              {(data.role === "vendor" || data.role === "teacher") && (
+                <div className={styles.file_upload_wrapper}>
+                  <label htmlFor="doc">
+                    <FaCloudUploadAlt />{" "}
+                    {file ? "File Selected" : (data.role === "teacher" ? "Teaching Degree/Aadhar" : "Shop License/Aadhar")}
+                  </label>
+                  <input
+                    type="file"
+                    id="doc"
+                    onChange={handleFileChange}
+                    required
+                  />
+                  {file && (
+                    <span className={styles.file_name}>{file.name}</span>
+                  )}
+                </div>
+              )}
+            </div>
 
             {error && <div className={styles.error_msg}>{error}</div>}
 
-            <button type="submit" className={styles.green_btn} disabled={uploading}>
+            <button
+              type="submit"
+              className={styles.green_btn}
+              disabled={uploading}
+            >
               {uploading ? "Uploading..." : "Sign Up"}
             </button>
           </form>

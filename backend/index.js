@@ -9,6 +9,7 @@ const userRoutes = require("./routes/users");   // Signup
 const authRoutes = require("./routes/auth");    // Login
 const quizRoutes = require("./routes/quiz");
 const courseRoutes = require("./routes/course");
+const aiRoutes = require("./routes/ai");
 
 const marketplaceRoutes = require("./routes/marketplace");
 const productRoutes = require("./routes/product");
@@ -31,6 +32,7 @@ app.use("/api/users", userRoutes);     // Signup Route
 app.use("/api/auth", authRoutes);      // Login Route
 app.use("/api/quiz", quizRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/uploads", express.static("uploads"));
 
 app.use("/api/marketplace", marketplaceRoutes);
@@ -51,3 +53,5 @@ app.listen(port, () =>
 );
 
 // Triggering restart for Razorpay keys!
+// Triggering restart for MongoDB!
+// Triggering restart for JWT!
