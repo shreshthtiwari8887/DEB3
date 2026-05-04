@@ -192,13 +192,13 @@ const TeacherProfile = () => {
           className={activeTab === "profile" ? "active-tab" : ""} 
           onClick={() => setActiveTab("profile")}
         >
-          Profile & Courses
+          👤 Profile & Courses
         </button>
         <button 
           className={activeTab === "analytics" ? "active-tab" : ""} 
           onClick={() => setActiveTab("analytics")}
         >
-          Analytics Dashboard
+          📊 Analytics Dashboard
         </button>
       </div>
 
